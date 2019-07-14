@@ -12,6 +12,6 @@ UUID=11921df8-0bdb-467c-b57e-7d4e8e9b5300 none            swap    sw            
 
 /dev/disk/by-id/ata-WDC_WD20EFRX-68AX9N0_WD-WMC300855418-part1     /mnt/disk1 btrfs defaults 0 2
 /dev/disk/by-id/ata-WDC_WD40EFRX-68WT0N0_WD-WCC4E3KC07DR-part1     /mnt/disk2 btrfs defaults 0 2
-/dev/disk/by-id/ata-WDC_WD60EZRZ-00GZ5B1_WD-WXN1H8449UPL-part1     /mnt/parity1 btrfs defaults 0 2
+/dev/disk/by-id/ata-WDC_WD40EZRZ-00GXCB0_WD-WCC7K5ZPEE20-part1     /mnt/parity1 btrfs defaults 0 2
 
 /mnt/disk* /mnt/storage fuse.mergerfs defaults,allow_other,minfreespace=250G,fsname=mergerfs 0 0
