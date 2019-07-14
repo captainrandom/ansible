@@ -10,9 +10,100 @@ services:
     network_mode: host
     restart: always
     environment:
-      - PLEX_CLAIM="nope"
       - PUID=${PUID}
       - PGID=${PGID}
+  plexpy:
+    image: linuxserver/plexpy
+    container_name: plexpy
+    depends_on:
+      - plex
+    volumes:
+      - /opt/appdata/plexpy:/config
+      - /opt/appdata/plex/Library/Application\ Support/Plex\ Media\ Server/Logs:/logs:ro
+    ports:
+      - 27029:8181
+    links:
+      - plex
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+  portainer:
+    image: portainer/portainer
+    container_name: portainer
+    ports:
+      - 9000:9000
+    volumes:
+      - /opt/appdata/portainer:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart:
+      always
+  radarr:
+    image: linuxserver/radarr
+    container_name: radarr
+    links:
+      - jackett:jackett
+      - qbittorrent:qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - /opt/appdata/radarr:/config
+      - /mnt/storage/Videos:/movies
+      - /mnt/storage/downloads/qbittorrent:/downloads
+    ports:
+      - 7878:7878
+    mem_limit: 4096m
+    restart: unless-stopped
+  qbittorrent:
+    image: linuxserver/qbittorrent
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK_SET=022
+      - WEBUI_PORT=9999
+    volumes:
+      - /opt/appdata/qbittorrent:/config
+      - /mnt/storage/downloads/qbittorrent:/downloads
+    ports:
+      - 6881:6881
+      - 6881:6881/udp
+      - 9999:9999
+    restart: unless-stopped
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - /opt/appdata/jackett:/config
+      - /home/mark/downloads/jackett:/downloads
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 9117:9117
+    restart: unless-stopped
+  sonarr:
+    image: linuxserver/sonarr
+    container_name: sonarr
+    links:
+      - jackett:jackett
+      - qbittorrent:qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - /opt/appdata/sonarr:/config
+      - /mnt/storage/Videos/Tv:/tv
+      - /mnt/storage/downloads/qbittorrent:/downloads
+    ports:
+      - 8989:8989
+    mem_limit: 4096m
+    restart: unless-stopped
   plexpy:
     image: linuxserver/plexpy
     container_name: plexpy
@@ -93,40 +184,6 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-  unifi:
-    image: linuxserver/unifi
-    container_name: unifi
-    network_mode: host
-    volumes:
-      - /opt/appdata/unifi:/config
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-  deluge:
-    image: linuxserver/deluge
-    container_name: deluge
-    network_mode: host
-    volumes:
-      - /opt/appdata/deluge:/config
-      - /mnt/disk1/downloads:/downloads
-      - /mnt/storage:/mnt/storage
-    restart: always
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-  sync:
-    image: linuxserver/resilio-sync
-    container_name: sync
-    volumes:
-      - /opt/appdata/sync:/config
-      - /mnt/storage:/sync
-    ports:
-      - 27028:8888
-      - 55555:55555
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-    restart: always
   smokeping:
     image: linuxserver/smokeping
     container_name: smokeping
@@ -139,49 +196,6 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
     restart: always
-  quassel:
-    image: linuxserver/quassel-core
-    container_name: quassel
-    volumes:
-      - /opt/appdata/quassel:/config
-    ports:
-      - 27023:4242
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-    restart: always
-  radarr:
-    image: linuxserver/radarr
-    container_name: radarr
-    volumes:
-      - /opt/appdata/radarr:/config
-      - /mnt/storage/movies:/movies
-      - /mnt/disk1/downloads/complete/movies:/downloads
-    ports:
-      - 7878:7878
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-    restart:
-      always
-  letsencrypt:
-    image: linuxserver/letsencrypt
-    container_name: letsencrypt
-    ports:
-      - 443:443
-    volumes:
-      - /opt/appdata/letsencrypt:/config
-    restart:
-      always
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - EMAIL=some@email.com
-      - URL=domain.tld
-      - SUBDOMAINS=one,sub,domain,comma,separated
-      - ONLY_SUBDOMAINS=true
-      - DHLEVEL=4096
-      - TZ=Europe/London
   libresonic:
     image: linuxserver/libresonic
     container_name: libresonic
@@ -194,18 +208,6 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - CONTEXT_PATH=sonic
-    restart:
-      always
-  ghost:
-    image: ghost
-    container_name: ghost
-    ports:
-      - "127.0.0.1:2368:2368"
-    environment:
-      - NODE_ENV=production
-      - url=https://blog.ktz.me
-    volumes:
-      - /opt/appdata/blog-ktz:/var/lib/ghost/content
     restart:
       always
   influxdb:
